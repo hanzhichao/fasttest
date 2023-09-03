@@ -1,0 +1,17 @@
+pymysql
+pillow
+django==4.0.0
+django-taggit
+
+# for api
+djangorestframework
+django-filter
+
+# only admin
+django-simpleui
+django-import-export
+django-admin-model-list-order
+django-admin-sortable
+
+# test library
+requests
