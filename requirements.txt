@@ -2,6 +2,10 @@ pymysql
 pillow
 django==4.0.0
 django-taggit
+matplotlib
+celery
+django-celery-beat
+django-celery-results
 
 # for api
 djangorestframework
@@ -12,6 +16,8 @@ django-simpleui
 django-import-export
 django-admin-model-list-order
 django-admin-sortable
+django-prettyjson
+django-cascading-dropdown-widget
 
 # test library
 requests

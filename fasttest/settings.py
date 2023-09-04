@@ -43,7 +43,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'admin_model_list_order',
+    'django_cascading_dropdown_widget',
     'adminsortable',
+    'prettyjson',
+    'django_celery_results',
+    'django_celery_beat',
 
     'app',
 ]
@@ -56,6 +60,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'admin_model_list_order.middleware.AdminModelListOrder',
 ]
 
 ROOT_URLCONF = 'fasttest.urls'
@@ -71,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.static',
             ],
         },
     },
@@ -87,6 +94,18 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'fastapi',  # 需要手动创建库
+#         'USER': 'root',
+#         'PASSWORD': 'passw0rd',
+#         'HOST': 'localhost',
+#         'PORT': '3306',
+#     }
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -115,12 +134,20 @@ TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True
+
+USE_L10N = False
+DATETIME_FORMAT = 'Y年m月d日 H:i:s'
+DATE_FORMAT = 'Y年m月d日'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -128,5 +155,56 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TEST_LIBRARIES = [
-    {'Http': 'libs.httplib'}
+    {'Http': 'libs.httplib'},
+    {'Assert': 'libs.assertlib'},
 ]
+
+CSRF_COOKIE_HTTPONLY = True
+
+ADMIN_MODEL_DEFAULT_PRIORITY = 100
+
+
+
+
+SIMPLEUI_HOME_INFO = False
+SIMPLEUI_LOADING = False
+SIMPLEUI_STATIC_OFFLINE = True
+SIMPLEUI_LOGIN_PARTICLES = False
+SIMPLEUI_ANALYSIS = False
+SIMPLEUI_DEFAULT_THEME = 'layui.css'
+
+SIMPLEUI_LOGO = '/static/img/fast.png'
+
+SIMPLEUI_ICON = {
+    '测试管理': 'fas fa-flask',
+    '测试环境': 'fab fa-envira',
+    '用例分类': 'fas fa-folder',
+    '测试用例': 'fas fa-vial',
+    '测试计划': 'fas fa-calendar-check',
+    '测试报告': 'fas fa-chart-pie',
+    '测试纪录': 'fas fa-rectangle-list',
+    'Celery Results': 'fas fa-list',
+}
+
+SIMPLEUI_CONFIG = {
+    'system_keep': True,
+    'dynamic': True,
+    'menu_display': ['测试管理', '周期任务', '认证和授权', '管理'],
+
+}
+
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_EXTENDED = True
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True  # 是否使用TLS安全传输协议
+EMAIL_HOST = 'smtp.sina.com'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'test_results@sina.com'
+EMAIL_HOST_PASSWORD = '4b62a57acb306ca9'

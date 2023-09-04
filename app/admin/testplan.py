@@ -1,19 +1,22 @@
-import traceback
-from datetime import datetime
-
 from django.contrib import admin
 from django.http import JsonResponse
+from django.utils.html import format_html
 
 from app.admin.base import BaseModelAdmin
-from app.models import Env, TestPlan, TestRecord, TestReport
+from app.models.env import Env
+from app.models.testplan import TestPlan
+from app.tasks import run_testplan
 
 
 @admin.register(TestPlan)
 class TestPlanAdmin(BaseModelAdmin):
-    list_display = ['id', 'name', 'description', 'testcase_cnt', 'last_status', 'create_user',
-                    'create_time']
+    admin_order = 4
+    list_display = ['id', 'name', 'description', 'create_user', 'create_time','testcase_cnt', 'is_success', 'operations']
     list_display_links = ['name']
     exclude = ['create_user', 'update_user', 'last_status']
+    list_filter = ['create_user', 'create_time']
+    search_fields = ['name']
+    # date_hierarchy = 'create_time'
 
     filter_horizontal = ['testcases']
 
@@ -23,37 +26,19 @@ class TestPlanAdmin(BaseModelAdmin):
     def testcase_cnt(self, obj):
         return obj.testcases.count()
 
+    @admin.display(description='运行状态', boolean=True)
+    def is_success(self, obj):
+        status = obj.last_status
+        if status:
+            return status == 1
 
-    def run_testplan(self, testplan, env):
-        test_report = TestReport(testplan=testplan, start_time = datetime.now(), status=1)
-        test_report.save()
-        for testcase in testplan.testcases.all():
-            test_record = TestRecord(testreport=test_report, testcase=testcase,
-                                     start_time=datetime.now())
-            try:
-                testcase.run(env)
-            except AssertionError:
-                test_record.error_msg = traceback.format_exc()
-                test_record.status = 2
-                test_report.status = 2
-                test_report.fail_num +=1
-            except Exception:
-                test_record.error_msg = traceback.format_exc()
-                test_record.status = 3
-                test_report.status = 2
-                test_report.fail_num += 1
-            else:
-                test_record.error_msg = traceback.format_exc()
-                test_record.status = 1
-                test_report.pass_num += 1
-            test_record.end_time = datetime.now()
-            test_record.save()
-            test_report.total += 1
-
-        test_report.end_time = datetime.now()
-        test_report.save()
-
-
+    @admin.display(description='操作')
+    def operations(self, obj):
+        last_result = obj.last_result
+        if last_result:
+            html = f'<a href="../testreport/{last_result.id}/change">测试报告</a>'
+            return format_html(html)
+        return ''
 
     @admin.action(description='运行')
     def run(self, request, queryset):
@@ -63,10 +48,9 @@ class TestPlanAdmin(BaseModelAdmin):
         env_id = request.POST.get('env')
         if not env_id:
             return JsonResponse(data={'status': 'error', 'msg': '请选择环境'})
-        env = Env.objects.get(id=env_id)
 
         for testplan in queryset:
-            self.run_testplan(testplan, env)
+            run_testplan(testplan.id, env_id)
 
         return JsonResponse(data={'status': 'success', 'msg': '运行成功'})
 

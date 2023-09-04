@@ -3,7 +3,7 @@ import importlib
 from django.db import models
 
 from fasttest import settings
-from . import BaseModel
+from .base import BaseModel
 
 
 def load_libs(config: dict) -> dict:
@@ -45,7 +45,8 @@ class Method(BaseModel):
         return method
 
     def __str__(self):
-        return '%s.%s' % (self.library.name, self.name)
+        # return '%s.%s' % (self.library.name, self.name)
+        return self.name
 
     class Meta:
         verbose_name = '操作方法'

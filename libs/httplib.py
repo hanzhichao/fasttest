@@ -19,7 +19,10 @@ class Http:
             url = '%s%s' % (self.base_url, url)
         data, json = (None, data) if is_json else (data, None)
         res = self.session.request(method, url, headers=headers, data=data, json=json)
-        return res.text
+        try:
+            return res.json()
+        except Exception:
+            return res.text
 
     def get(self, url, headers: dict = None, data: dict = None, is_json: bool = False):
         return self.request('GET', url, headers=headers, data=data, is_json=is_json)

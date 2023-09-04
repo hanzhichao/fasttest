@@ -1,6 +1,6 @@
 from django.db import models
 
-from . import (TESTCASE_STATUS_CHOICES, TESTPLAN_STATUS_CHOICES)
+from .base import (TESTCASE_STATUS_CHOICES, TESTPLAN_STATUS_CHOICES, NULLABLE_FK)
 
 
 class TestReport(models.Model):
@@ -11,7 +11,9 @@ class TestReport(models.Model):
 
     total = models.PositiveIntegerField('运行总数', default=0)
     fail_num = models.PositiveIntegerField('失败用例数', default=0)
+    error_num = models.PositiveIntegerField('出错用例数', default=0)
     pass_num = models.PositiveIntegerField('通过用例数', default=0)
+    chart = models.ImageField('运行统计', null=True, blank=True)
 
     @property
     def is_success(self):
@@ -25,7 +27,7 @@ class TestReport(models.Model):
             return f'{pass_rate}%'
 
     def __str__(self):
-        return '%s-测试报告-%s' % (self.testplan.name, self.start_time)
+        return '%s-测试报告-%s' % (self.testplan.name, self.start_time.strftime('%Y-%m-%d %H:%M:%S'))
 
     class Meta:
         verbose_name = '测试报告'
@@ -35,18 +37,19 @@ class TestReport(models.Model):
 class TestRecord(models.Model):
     """测试报告中-单条用例的执行纪录"""
     testreport = models.ForeignKey("TestReport", verbose_name='测试报告', related_name='details',
-                                   on_delete=models.CASCADE)
-    testcase = models.ForeignKey("TestCase", verbose_name='测试报告', related_name='records', on_delete=models.CASCADE)
+                                   **NULLABLE_FK)
+    testcase = models.ForeignKey("TestCase", verbose_name='测试用例', related_name='records', on_delete=models.CASCADE)
     start_time = models.DateTimeField('开始时间', null=True, blank=True)
     end_time = models.DateTimeField('结束时间', null=True, blank=True)
     status = models.PositiveSmallIntegerField('运行状态', null=True,
                                               choices=TESTCASE_STATUS_CHOICES, default=0)
-    error_msg = models.TextField('错误信息', null=True)
-    details = models.JSONField('步骤详情', null=True, default=dict)
+    error_msg = models.TextField('错误信息', null=True, blank=True, default='')
+    # details = models.JSONField('步骤详情', null=True, default=dict)
+    log = models.TextField('运行日志', null=True, blank=True, default='')
 
     def __str__(self):
-        return '%s-测试纪录-%s' % (self.testcase.name, self.start_time)
+        return '%s-测试纪录-%s' % (self.testcase.name, self.start_time.strftime('%Y-%m-%d %H:%M:%S'))
 
     class Meta:
         verbose_name = '测试纪录'
-        verbose_name_plural = '测试报告'
+        verbose_name_plural = '测试纪录'
