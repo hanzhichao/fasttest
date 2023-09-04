@@ -21,16 +21,14 @@ class Category(BaseModel, SortableMixin):
         verbose_name_plural = '用例分类'
 
 
-class TestCase(BaseModelWithUser, SortableMixin):
+class TestCase(BaseModelWithUser):
     category = models.ForeignKey(Category, verbose_name='用例分类', **NULLABLE_FK)
     priority = models.PositiveSmallIntegerField('优先级',
                                                 choices=PRIORITY_CHOICES, default=1)
-    order = models.PositiveIntegerField('排序', default=0, editable=False, db_index=True)
     tags = TaggableManager('标签', blank=True)
 
 
     class Meta:
-        ordering = ['order']
         verbose_name = '测试用例'
         verbose_name_plural = '测试用例'
 
