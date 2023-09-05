@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from app.admin.base import BaseModelAdmin
 from app.models.testreport import TestRecord, TestReport
@@ -15,6 +16,7 @@ class TestRecordInline(admin.TabularInline):
     def details(self, obj):
         html = f'<a href="../../../testrecord/{obj.id}/change">详情</a>'
         return format_html(html)
+
 
 
 @admin.register(TestReport)
@@ -63,19 +65,41 @@ class TestRecordAdmin(BaseModelAdmin):
     list_display = ['id', '__str__', 'start_time', 'end_time', 'is_success']
 
     list_per_page = 25
+    readonly_fields = ['is_success', 'error_info', 'run_log']
 
     fieldsets = (
         (None, {'fields': ('testcase',
                            'testreport',
                            ('status', 'start_time', 'end_time'),
-                           'error_msg',
+                           'error_info',
+                           'run_log',
                            )}),
-        ('运行日志', {'fields': ('log',), 'classes': ['']})
+        # (None, {'fields': ('run_log',), 'classes': ['collapse']})
     )
 
     @admin.display(description='运行状态', boolean=True)
     def is_success(self, obj):
         return obj.status == 1
+
+    @admin.display(description='错误信息')
+    def error_info(self, obj):
+        error_msg = obj.error_msg
+        if error_msg:
+            try:
+                return mark_safe(f'<pre>{error_msg}</pre>')
+            except:
+                return error_msg
+        return '-'
+
+    @admin.display(description='运行日志')
+    def run_log(self, obj):
+        log = obj.log or ''
+        if log:
+            try:
+                return mark_safe(f'<pre>{obj.log}</pre>')
+            except:
+                return log
+        return '-'
 
     def has_add_permission(self, request):
         return False

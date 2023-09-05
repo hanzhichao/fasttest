@@ -39,15 +39,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'taggit',
-    'import_export',
+    # for api
     'rest_framework',
     'django_filters',
+    # celery
+    'django_celery_results',
+    'django_celery_beat',
+    # for admin
+    'import_export',
     'admin_model_list_order',
     'django_cascading_dropdown_widget',
     'adminsortable',
     'prettyjson',
-    'django_celery_results',
-    'django_celery_beat',
 
     'app',
 ]
@@ -155,8 +158,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TEST_LIBRARIES = [
-    {'Http': 'libs.httplib'},
+    {'Common': 'libs.commonlib'},
     {'Assert': 'libs.assertlib'},
+    {'Http': 'libs.httplib'},
+    {'Selenium': 'libs.seleniumlib'},
 ]
 
 CSRF_COOKIE_HTTPONLY = True
@@ -208,3 +213,18 @@ EMAIL_HOST = 'smtp.sina.com'
 EMAIL_PORT = 465
 EMAIL_HOST_USER = 'test_results@sina.com'
 EMAIL_HOST_PASSWORD = '4b62a57acb306ca9'
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}

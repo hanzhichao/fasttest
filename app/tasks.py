@@ -1,5 +1,7 @@
+import logging
 import os
 import traceback
+from pprint import pprint
 
 from celery import shared_task
 from django.utils.timezone import now
@@ -12,17 +14,27 @@ from app.models.testreport import TestRecord, TestReport
 from app.utils import Capturing, Context, gen_pass_rate_chart
 from fasttest import settings
 
+from loguru import logger
 
-def run_step(step_id, config, context=None):
-    context = context or Context()
+logger.add("django.log", format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}", rotation="100 MB", filter="",
+           level="INFO", encoding='utf-8')
+
+
+
+def run_step(step_id, context):
     step = Step.objects.get(id=step_id)
     print(f'执行步骤 {step} ----------------------------------------------------------------')
     # print('当前上下文变量', context.variables)
-    method = step.method.get_method(config)
+    method = step.method
+    library = method.library
+
+    method = context.get_method(library.name, method.name)
     print(f'执行操作: {step.method} 参数 {step.args} ')
     method_args = step.args
 
-    if isinstance(method_args, dict):
+    if method_args is None:
+        args, kwargs = [], {}
+    elif isinstance(method_args, dict):
         args, kwargs = [], method_args
     elif isinstance(method_args, list):
         args, kwargs = method_args, {}
@@ -33,7 +45,10 @@ def run_step(step_id, config, context=None):
     kwargs = {key: context.get(value) for key, value in kwargs.items()}
     result = method(*args, **kwargs)
     context.set('result', result)
-    print(f'执行结果: {result}')
+    if result:
+        print(f'执行结果:')
+        if isinstance(result, dict) or isinstance(result, list):
+            pprint(result)
     return result
 
 
@@ -41,29 +56,38 @@ def run_step(step_id, config, context=None):
 def run_testcase(testcase_id, env_id):
     testcase = TestCase.objects.get(id=testcase_id)
     env = Env.objects.get(id=env_id)
-    context = Context(variables=env.variables)
-    config = env.config
+    context = Context(config = env.config, variables=env.variables)
+
     test_record = TestRecord(testcase=testcase, start_time=now())
     with Capturing() as output:
         print(f'运行用例 {testcase.name}')
         try:
-            print('\n执行Setups >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            print('执行Setups >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             for step in testcase.setup_steps:
-                run_step(step.id, config, context)
-            print('\n执行测试步骤 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-            for step in testcase.test_steps:
-                run_step(step.id, config, context)
-            print('\n执行Teardowns >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-            for step in testcase.teardown_steps:
-                run_step(step.id, config, context)
-        except AssertionError:
-            test_record.error_msg = traceback.format_exc()
-            test_record.status = 2
+                run_step(step.id, context)
         except Exception:
             test_record.error_msg = traceback.format_exc()
-            test_record.status = 3
+            test_record.status = 2
         else:
-            test_record.status = 1
+            try:
+                print('执行测试步骤 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+                for step in testcase.test_steps:
+                    run_step(step.id, context)
+            except AssertionError:
+                test_record.error_msg = traceback.format_exc()
+                test_record.status = 2
+            except Exception:
+                test_record.error_msg = traceback.format_exc()
+                test_record.status = 3
+            else:
+                test_record.status = 1
+            finally:
+                try:
+                    print('执行Teardowns >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+                    for step in testcase.teardown_steps:
+                        run_step(step.id, context)
+                except:
+                    pass
     test_record.end_time = now()
     log = '\n'.join(output)
     print('运行结果')

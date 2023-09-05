@@ -20,7 +20,6 @@ class Step(SortableMixin):
     def __str__(self):
         return self.name or str(self.method) or ''
 
-
     class Meta:
         ordering = ['order']
         verbose_name = '步骤'

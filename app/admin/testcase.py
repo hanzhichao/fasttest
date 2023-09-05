@@ -54,10 +54,7 @@ class TestCaseModelForm(forms.ModelForm):
         model = TestCase
         exclude = ['create_user', 'update_user', 'last_status', 'last_result', 'order']
 
-@admin.register(Category)
-class CategoryAdmin(BaseModelAdmin):
-    admin_order = 2
-    list_display = ['id', '__str__', 'description']
+
 
 @admin.register(TestCase)
 class TestCaseAdmin(BaseModelAdmin, NonSortableParentAdmin):
@@ -68,7 +65,7 @@ class TestCaseAdmin(BaseModelAdmin, NonSortableParentAdmin):
     list_display_links = ['name']
     search_fields = ['name']
     list_filter = ['category', 'priority', 'tags', 'create_user', 'create_time']
-    actions = ['run']
+    actions = ['run', 'copy']
 
     # 修改页配置
     inlines = [SetupStepInline, TestStepInline, TeardownStepInline]
@@ -100,6 +97,14 @@ class TestCaseAdmin(BaseModelAdmin, NonSortableParentAdmin):
 
     def operation_view_log(self, result, testcase_id):
         pass
+
+    @admin.action(description='复制')
+    def copy(self, request, queryset):
+        for obj in queryset:
+            obj.copy()
+
+    copy.type = 'primary'
+    copy.icon = 'el-icon-document'
 
     def get_urls(self):
         urls = super().get_urls()

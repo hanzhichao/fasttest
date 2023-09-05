@@ -1,26 +1,51 @@
+from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline
+from django import forms
 from django.contrib import admin
 from django.http import JsonResponse
 from django.utils.html import format_html
+from django_cascading_dropdown_widget.widgets import CascadingModelchoices, DjangoCascadingDropdownWidget
 
-from app.admin.base import BaseModelAdmin
+from app.admin.base import BaseModelAdmin, BaseTabularInline
 from app.models.env import Env
-from app.models.testplan import TestPlan
+from app.models.testcase import Category, TestCase
+from app.models.testplan import TestPlan, TestPlanTestCase
 from app.tasks import run_testplan
 
 
+class TestPlanTestCaseForm(forms.ModelForm):
+    class Meta:
+        model = TestPlanTestCase
+        exclude = []
+        widgets = {
+            "testcase": DjangoCascadingDropdownWidget(
+                choices=CascadingModelchoices(
+                    {"model": Category, "related_name": "testcases"},
+                    {"model": TestCase, "fk_name": "category"})),
+        }
+
+
+class TestPlanTestCaseInline(BaseTabularInline, SortableTabularInline):
+    form = TestPlanTestCaseForm
+    model = TestPlanTestCase
+    extra = 0
+
+
 @admin.register(TestPlan)
-class TestPlanAdmin(BaseModelAdmin):
+class TestPlanAdmin(BaseModelAdmin, NonSortableParentAdmin):
     admin_order = 4
-    list_display = ['id', 'name', 'description', 'create_user', 'create_time','testcase_cnt', 'is_success', 'operations']
+    list_display = ['id', 'name', 'description', 'create_user', 'create_time', 'testcase_cnt', 'is_success',
+                    'operations']
     list_display_links = ['name']
     exclude = ['create_user', 'update_user', 'last_status']
     list_filter = ['create_user', 'create_time']
     search_fields = ['name']
     # date_hierarchy = 'create_time'
 
-    filter_horizontal = ['testcases']
+    # filter_horizontal = ['testcases']
 
-    actions = ['run']
+    inlines = [TestPlanTestCaseInline]
+
+    actions = ['run', 'copy']
 
     @admin.display(description='用例数')
     def testcase_cnt(self, obj):
@@ -39,6 +64,14 @@ class TestPlanAdmin(BaseModelAdmin):
             html = f'<a href="../testreport/{last_result.id}/change">测试报告</a>'
             return format_html(html)
         return ''
+
+    @admin.action(description='复制')
+    def copy(self, request, queryset):
+        for obj in queryset:
+            obj.copy()
+
+    copy.type = 'primary'
+    copy.icon = 'el-icon-document'
 
     @admin.action(description='运行')
     def run(self, request, queryset):

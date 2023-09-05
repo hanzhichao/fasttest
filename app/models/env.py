@@ -1,5 +1,9 @@
+import importlib
+from functools import cached_property
+
 from django.db import models
 
+from fasttest import settings
 from .base import BaseModel
 from .library import Library
 
@@ -18,6 +22,8 @@ class Env(BaseModel):
     @property
     def variables(self):
         return {item.key: item.value for item in self.env_variables.all()}
+
+
 
 
 class LibraryConfig(models.Model):
