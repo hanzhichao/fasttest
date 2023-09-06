@@ -1,1 +1,6 @@
-cd .. && OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES  celery -A fasttest worker -l INFO --concurrency=10 -n worker1.%h && cd -
+APP=fasttest
+LOGLEVEL=INFO
+CONCURRENCY=10
+
+cd ..
+celery -A ${APP} worker -l ${LOGLEVEL} --concurrency=${CONCURRENCY} -n worker1.%h
