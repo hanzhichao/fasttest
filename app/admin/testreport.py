@@ -1,41 +1,40 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django_object_actions import action
 
 from app.admin.base import BaseModelAdmin
-from app.models.testreport import TestRecord, TestReport
-
-
-class TestRecordInline(admin.TabularInline):
-    model = TestRecord
-    extra = 0
-    fields = ['testcase', 'status', 'start_time', 'end_time', 'error_msg', 'details']
-    readonly_fields = ['details']
-
-    @admin.display(description='详情')
-    def details(self, obj):
-        html = f'<a href="../../../testrecord/{obj.id}/change">详情</a>'
-        return format_html(html)
-
+from app.admin.testrecord import TestRecordInline
+from app.models.testreport import TestReport
 
 
 @admin.register(TestReport)
 class TestReportAdmin(BaseModelAdmin):
     admin_order = 5
-    list_display = ['id', '__str__', 'testplan', 'is_success', 'total', 'pass_num', 'pass_rate',
-                    'start_time', 'end_time']
+    list_display = ['id', '__str__', 'testplan', 'env', 'is_success', 'total', 'pass_num',
+                    'pase_rate_progress',
+                    'start_time', 'end_time', 'elapsed_time', 'create_user']
     list_display_links = ['__str__']
-    list_filter = ['testplan', 'status']
-    readonly_fields = ['chart_img']
-
-    list_per_page = 25
+    list_filter = ['testplan', 'env', 'create_user', 'start_time']
+    readonly_fields = ['testplan', 'env', 'create_user', 'status', 'start_time', 'end_time', 'total', 'pass_num',
+                       'fail_num',
+                       'chart_img']
 
     inlines = [TestRecordInline]
 
-    fields = ['testplan', ('status', 'start_time', 'end_time'),
+    fields = ['testplan',
+              'env',
+              'create_user',
+              ('status', 'start_time', 'end_time'),
               ('total', 'pass_num', 'fail_num'),
               'chart_img',
               ]
+
+    change_actions = ('download_report',)
+
+    @action(label="下载", description="下载测试报告")  # optional
+    def download_report(self, request, obj):
+        print('下载', obj)
 
     @admin.display(description='运行状态', boolean=True)
     def is_success(self, obj):
@@ -45,64 +44,37 @@ class TestReportAdmin(BaseModelAdmin):
     def pass_rate(self, obj):
         return obj.pass_rate
 
+    @admin.display(description='通过率')
+    def pase_rate_progress(self, obj):
+        pass_rate = obj.pass_rate or '0%'
+        bg_color = 'rgb(235, 238, 245)'
+        text_color = 'rgb(255, 255, 255)'
+        print(pass_rate)
+        if pass_rate == '0%':
+            text_color = 'rgb(96, 98, 102)'
+
+        if pass_rate == '100.0%':
+            type = 'is-success'
+        else:
+            type = 'is-warning'
+
+        html = f'''<div role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" class="el-progress el-progress--line {type} el-progress--text-inside">
+        <div class="el-progress-bar">
+        <div class="el-progress-bar__outer" style="height: 24px; background-color: {bg_color};">
+        <div class="el-progress-bar__inner" style="width: {pass_rate};">
+        <div class="el-progress-bar__innerText" style="color: {text_color};">{pass_rate}</div>
+        </div></div></div><!----></div>
+        '''
+        return mark_safe(html)
+
     def has_add_permission(self, request):
         return False
 
-    def has_change_permission(self, request, obj=None):
-        return False
 
     @admin.display(description='运行统计')
     def chart_img(self, obj):
+        chart = obj.get_chart()
         return format_html('<img src="{url}" height="{height}" />'.format(
-            url=obj.chart.url,
+            url=chart.url,
             height=400,
         ))
-
-
-@admin.register(TestRecord)
-class TestRecordAdmin(BaseModelAdmin):
-    admin_order = 6
-    list_display = ['id', '__str__', 'start_time', 'end_time', 'is_success']
-
-    list_per_page = 25
-    readonly_fields = ['is_success', 'error_info', 'run_log']
-
-    fieldsets = (
-        (None, {'fields': ('testcase',
-                           'testreport',
-                           ('status', 'start_time', 'end_time'),
-                           'error_info',
-                           'run_log',
-                           )}),
-        # (None, {'fields': ('run_log',), 'classes': ['collapse']})
-    )
-
-    @admin.display(description='运行状态', boolean=True)
-    def is_success(self, obj):
-        return obj.status == 1
-
-    @admin.display(description='错误信息')
-    def error_info(self, obj):
-        error_msg = obj.error_msg
-        if error_msg:
-            try:
-                return mark_safe(f'<pre>{error_msg}</pre>')
-            except:
-                return error_msg
-        return '-'
-
-    @admin.display(description='运行日志')
-    def run_log(self, obj):
-        log = obj.log or ''
-        if log:
-            try:
-                return mark_safe(f'<pre>{obj.log}</pre>')
-            except:
-                return log
-        return '-'
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False

@@ -3,9 +3,12 @@ pillow
 django==4.0.0
 django-taggit
 matplotlib
+
+# celery
 celery
 django-celery-beat
 django-celery-results
+flower
 
 # for api
 djangorestframework
@@ -18,6 +21,7 @@ django-admin-model-list-order
 django-admin-sortable
 django-prettyjson
 django-cascading-dropdown-widget
+django-attachments
 
 # test library
 requests

@@ -1,7 +1,7 @@
 from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline
 from django.contrib import admin
 
-from app.admin import BaseModelAdmin, BaseTabularInline
+from app.admin.base import BaseModelAdmin, BaseTabularInline
 from app.models.category import Category
 
 

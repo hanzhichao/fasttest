@@ -1,6 +1,7 @@
+import functools
+
 from django.contrib.auth.models import User
 from django.db import models
-
 
 TESTCASE_STATUS_CHOICES = (
     (0, '待运行'),
@@ -17,7 +18,7 @@ TESTPLAN_STATUS_CHOICES = (
 PRIORITY_CHOICES = (
     (0, 'P0'),
     (1, 'P1'),
-    (2, 'P2'),
+    (2, 'P2')
 )
 
 STEP_TYPE_CHOICES = (
@@ -25,6 +26,15 @@ STEP_TYPE_CHOICES = (
     (1, '测试准备'),
     (2, '测试清理'),
 )
+
+ERROR_REASON_CHOICES = (
+    ('platform_error', '平台问题'),
+    ('testcase_error', '用例问题'),
+    ('env_error', '环境问题'),
+    ('data_error', '数据问题'),
+    ('bug', '疑似Bug'),
+)
+
 
 NULLABLE_FK = dict(null=True, blank=True, on_delete=models.SET_NULL)
 
@@ -49,3 +59,13 @@ class BaseModelWithUser(BaseModel):
 
     class Meta:
         abstract = True
+
+
+def label(description):
+    def decorator(func):
+        func.short_description = description
+        return func
+    return decorator
+    # if cached:
+    #     return functools.cached_property(decorator)
+    # return property(decorator)

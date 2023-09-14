@@ -1,10 +1,8 @@
-from functools import reduce
-
 from adminsortable.fields import SortableForeignKey
 from adminsortable.models import SortableMixin
 from django.db import models
 
-from app.models.base import BaseModel, NULLABLE_FK
+from app.models.base import BaseModel, NULLABLE_FK, label
 
 
 class Category(BaseModel, SortableMixin):
@@ -22,6 +20,7 @@ class Category(BaseModel, SortableMixin):
         verbose_name_plural = '用例分类'
 
     @property
+    @label('级别')
     def level(self):
         if self.parent:
             return self.parent.level + 1

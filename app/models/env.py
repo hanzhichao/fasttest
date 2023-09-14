@@ -1,16 +1,10 @@
-import importlib
-from functools import cached_property
-
 from django.db import models
 
-from fasttest import settings
 from .base import BaseModel
 from .library import Library
 
 
 class Env(BaseModel):
-    # config = models.JSONField('测试库配置', null=True, default=dict)
-
     class Meta:
         verbose_name = '测试环境'
         verbose_name_plural = '测试环境'
@@ -24,12 +18,11 @@ class Env(BaseModel):
         return {item.key: item.value for item in self.env_variables.all()}
 
 
-
-
 class LibraryConfig(models.Model):
     env = models.ForeignKey(Env, verbose_name='所属环境', related_name='library_configs', on_delete=models.CASCADE)
     library = models.ForeignKey(Library, verbose_name='操作库', on_delete=models.CASCADE)
-    config = models.JSONField('测试库配置', null=True, blank=True, default=dict, help_text='操作库类初始化参数,字典格式')
+    config = models.JSONField('测试库配置', null=True, blank=True, default=dict,
+                              help_text='操作库类初始化参数,字典格式')
 
     def __str__(self):
         return '%s-操作库配置' % self.library.name
@@ -49,5 +42,6 @@ class EnvVariable(models.Model):
         return self.key
 
     class Meta:
+        unique_together = ["env", "key"]
         verbose_name = '环境变量'
         verbose_name_plural = '环境变量'

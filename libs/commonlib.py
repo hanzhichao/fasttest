@@ -7,10 +7,11 @@ class Common:
         pass
 
     def print(self, *args, **kwargs):
-        assert print(*args, **kwargs)
+        print(*args, **kwargs)
 
     def info(self, msg: str):
         logging.info(msg)
 
     def sleep(self, seconds: int):
         time.sleep(seconds)
+

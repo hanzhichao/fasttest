@@ -46,11 +46,14 @@ INSTALLED_APPS = [
     'django_celery_results',
     'django_celery_beat',
     # for admin
+    'django_object_actions',
     'import_export',
     'admin_model_list_order',
     'django_cascading_dropdown_widget',
     'adminsortable',
     'prettyjson',
+    # 'nested_admin',
+    'attachments',
 
     'app',
 ]
@@ -162,13 +165,13 @@ TEST_LIBRARIES = [
     {'Assert': 'libs.assertlib'},
     {'Http': 'libs.httplib'},
     {'Selenium': 'libs.seleniumlib'},
+    {'Chainmaker': 'libs.chainmakerlib'},
+    {'ContractManage': 'libs.chainmakerlib'},
 ]
 
 CSRF_COOKIE_HTTPONLY = True
 
 ADMIN_MODEL_DEFAULT_PRIORITY = 100
-
-
 
 
 SIMPLEUI_HOME_INFO = False
@@ -194,7 +197,7 @@ SIMPLEUI_ICON = {
 SIMPLEUI_CONFIG = {
     'system_keep': True,
     'dynamic': True,
-    'menu_display': ['测试管理', '周期任务', '认证和授权', '管理'],
+    # 'menu_display': ['测试管理', '周期任务', '认证和授权', '管理'],
 
 }
 
@@ -228,3 +231,7 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+
+
+LIST_PER_PAGE = 15
